@@ -15,11 +15,11 @@
 
 ### Phase 1: 核心系统底座 (Core Engine)
 搭建整个系统的心脏——异步事件驱动引擎。
-- [ ] 定义基础数据模型 (TickData, BarData, OrderData 等，借鉴 VNPY 标准字段)。
-- [ ] 开发轻量级的纯后台主引擎 (`TradingEngine`)。
-- [ ] 开发基于 `asyncio` 的核心事件分发引擎 (`EventEngine`)。
-- [ ] 开发本地沙盒仿真账户环境 (`PaperAccount`)。
-- [ ] 撰写说明文档 (`docs/core_engine.md`) 并完成事件分发机制测试 (`tests/test_event_engine.py`)。
+- `[x]` 定义基础数据模型 (TickData, BarData, OrderData 等，借鉴 VNPY 标准字段)。
+- `[x]` 开发轻量级的纯后台主引擎 (`TradingEngine`)。
+- `[x]` 开发基于 `asyncio` 的核心事件分发引擎 (`EventEngine`)。
+- `[x]` 开发本地沙盒仿真账户环境 (`PaperAccount`)。
+- `[x]` 撰写说明文档 (`docs/core_engine.md`) 并完成事件分发机制测试 (`tests/test_event_engine.py`)。
 
 ### Phase 2: 数据底座、记录与回测模块 (Data, Recorder & Backtest)
 打通脱机历史数据与实盘行情数据的保存闭环。
@@ -56,4 +56,4 @@
 ---
 
 ## 📅 项目当前进展
-*当前任务聚焦*: **准备启动 Phase 1**。
+*当前任务聚焦*: **Phase 1 核心系统底座已完成！准备启动 Phase 2**。

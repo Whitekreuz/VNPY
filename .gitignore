@@ -1,0 +1,65 @@
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyd
+
+# Python #
+##########
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment #
+#######################
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE & OS #
+############
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Database & Data #
+###################
+*.db
+*.sqlite
+*.sqlite3
+data/*.csv
+data/*.json
+data/db/
+pg_data/
+timescaledb/
+
+# Logs #
+########
+*.log
+logs/

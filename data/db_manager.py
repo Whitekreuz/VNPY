@@ -1,0 +1,97 @@
+import pandas as pd
+from typing import List
+from datetime import datetime
+from core.models import BarData
+
+try:
+    import psycopg2
+    from psycopg2.extras import execute_values
+    PSYCOPG2_INSTALLED = True
+except ImportError:
+    PSYCOPG2_INSTALLED = False
+
+class DBManager:
+    """PostgreSQL 数据库管理模块，用于高效存储 K线 和 Tick 数据"""
+    def __init__(self, dbname, user, password, host="localhost", port=5432):
+        if not PSYCOPG2_INSTALLED:
+            raise ImportError("未安装 psycopg2，请运行: pip install psycopg2-binary")
+            
+        self.conn = psycopg2.connect(
+            dbname=dbname,
+            user=user,
+            password=password,
+            host=host,
+            port=port
+        )
+        self.create_tables()
+
+    def create_tables(self):
+        """建表操作"""
+        with self.conn.cursor() as cur:
+            # 创建 K线表
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS bardata (
+                    symbol VARCHAR(50),
+                    exchange VARCHAR(50),
+                    datetime TIMESTAMP,
+                    interval VARCHAR(10),
+                    volume FLOAT,
+                    turnover FLOAT,
+                    open_interest FLOAT,
+                    open_price FLOAT,
+                    high_price FLOAT,
+                    low_price FLOAT,
+                    close_price FLOAT,
+                    PRIMARY KEY (symbol, exchange, interval, datetime)
+                );
+            """)
+            # 如果安装了 TimescaleDB，强烈建议在数据库中执行: 
+            # SELECT create_hypertable('bardata', 'datetime', if_not_exists => TRUE);
+            self.conn.commit()
+
+    def save_bar_data(self, bars: List[BarData]):
+        if not bars:
+            return
+            
+        query = """
+            INSERT INTO bardata (symbol, exchange, datetime, interval, volume, turnover, open_interest, open_price, high_price, low_price, close_price)
+            VALUES %s
+            ON CONFLICT (symbol, exchange, interval, datetime) DO UPDATE SET
+                volume = EXCLUDED.volume,
+                turnover = EXCLUDED.turnover,
+                open_interest = EXCLUDED.open_interest,
+                open_price = EXCLUDED.open_price,
+                high_price = EXCLUDED.high_price,
+                low_price = EXCLUDED.low_price,
+                close_price = EXCLUDED.close_price;
+        """
+        
+        values = [
+            (b.symbol, b.exchange, b.datetime, b.interval, b.volume, b.turnover, b.open_interest, b.open_price, b.high_price, b.low_price, b.close_price)
+            for b in bars
+        ]
+        
+        with self.conn.cursor() as cur:
+            execute_values(cur, query, values)
+            self.conn.commit()
+
+    def load_bar_data(self, symbol: str, exchange: str, interval: str, start: datetime, end: datetime) -> List[BarData]:
+        query = """
+            SELECT symbol, exchange, datetime, interval, volume, turnover, open_interest, open_price, high_price, low_price, close_price
+            FROM bardata
+            WHERE symbol = %s AND exchange = %s AND interval = %s AND datetime >= %s AND datetime <= %s
+            ORDER BY datetime ASC;
+        """
+        
+        with self.conn.cursor() as cur:
+            cur.execute(query, (symbol, exchange, interval, start, end))
+            rows = cur.fetchall()
+            
+        bars = []
+        for row in rows:
+            bars.append(BarData(
+                symbol=row[0], exchange=row[1], datetime=row[2], interval=row[3],
+                volume=row[4], turnover=row[5], open_interest=row[6],
+                open_price=row[7], high_price=row[8], low_price=row[9], close_price=row[10]
+            ))
+        return bars

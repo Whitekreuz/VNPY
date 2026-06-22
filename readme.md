@@ -23,12 +23,12 @@
 
 ### Phase 2: 数据底座、记录与回测模块 (Data, Recorder & Backtest)
 打通脱机历史数据与实盘行情数据的保存闭环。
-- [ ] 完成 PostgreSQL + TimescaleDB 的本地环境配置。
-- [ ] 开发基于 iFinD API 的历史分钟/日线数据下载与清洗脚本 (`data/ifind_loader.py`)。
-- [ ] 开发数据库统一交互与入库模块 (`data/db_manager.py`)。
-- [ ] 开发高效的本地脱机 CTA 回测引擎 (`backtest/backtester.py`)。
-- [ ] 开发实盘并行运行的数据落盘记录器 (`data/recorder.py`)。
-- [ ] 撰写说明文档 (`docs/data_and_backtest.md`) 并完成历史数据存取测试 (`tests/test_data.py`)。
+- `[x]` 完成 PostgreSQL + TimescaleDB 的本地环境配置。
+- `[x]` 开发基于 iFinD API 的历史分钟/日线数据下载与清洗脚本 (`data/ifind_loader.py`)。
+- `[x]` 开发数据库统一交互与入库模块 (`data/db_manager.py`)。
+- `[x]` 开发高效的本地脱机 CTA 回测引擎 (`backtest/backtester.py`)。
+- `[x]` 开发实盘并行运行的数据落盘记录器 (`data/recorder.py`)。
+- `[x]` 撰写说明文档 (`docs/data_and_backtest.md`) 并完成历史数据存取测试 (`tests/test_data.py`)。
 
 ### Phase 3: 策略引擎与事前风控 (Strategy Engine & Risk Control)
 定义量化策略的生命周期和系统“安全带”。
@@ -56,4 +56,4 @@
 ---
 
 ## 📅 项目当前进展
-*当前任务聚焦*: **Phase 1 核心系统底座已完成！准备启动 Phase 2**。
+*当前任务聚焦*: **Phase 2 数据与回测模块已完成！准备启动 Phase 3**。

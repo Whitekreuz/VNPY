@@ -1,5 +1,10 @@
 import pandas as pd
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+# 加载 .env 环境变量
+load_dotenv()
 
 try:
     from iFinDPy import THS_iFinDLogin, THS_iFinDLogout, THS_HF, THS_HQ
@@ -12,9 +17,16 @@ class IFinDLoader:
     def __init__(self):
         self.connected = False
 
-    def login(self, username, password):
+    def login(self, username=None, password=None):
         if not IFIND_INSTALLED:
             print("未安装 iFinDPy 库，请使用 pip install iFinDPy 安装。")
+            return False
+            
+        username = username or os.getenv("IFIND_USERNAME")
+        password = password or os.getenv("IFIND_PASSWORD")
+        
+        if not username or not password:
+            print("错误：缺少 iFinD 账号或密码。请在代码中传入，或在 .env 文件中配置 IFIND_USERNAME 和 IFIND_PASSWORD")
             return False
             
         ret = THS_iFinDLogin(username, password)

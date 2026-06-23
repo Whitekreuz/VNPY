@@ -63,3 +63,9 @@ timescaledb/
 ########
 *.log
 logs/
+
+# Environment Variables #
+#########################
+.env
+.env.*
+!.env.example

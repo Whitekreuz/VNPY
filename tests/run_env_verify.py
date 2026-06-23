@@ -1,6 +1,9 @@
 import sys
 import os
 import getpass
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # 将项目根目录加入路径以便导入模块
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -17,12 +20,19 @@ def test_ifind():
         print("请确保已在 quant 环境中运行: pip install iFinDPy")
         return False
         
-    username = input("请输入 iFinD 账号 (按回车跳过验证): ").strip()
-    if not username:
-        print("⏩ 跳过 iFinD 验证。")
-        return True
-        
-    password = getpass.getpass("请输入 iFinD 密码: ")
+    env_user = os.getenv("IFIND_USERNAME", "")
+    env_pass = os.getenv("IFIND_PASSWORD", "")
+    
+    if env_user and env_pass:
+        print(f"检测到 .env 中已配置 iFinD 账号: {env_user}")
+        username = env_user
+        password = env_pass
+    else:
+        username = input("请输入 iFinD 账号 (按回车跳过验证): ").strip()
+        if not username:
+            print("⏩ 跳过 iFinD 验证。")
+            return True
+        password = getpass.getpass("请输入 iFinD 密码: ")
     
     print("正在尝试连接 iFinD 服务器...")
     loader = IFinDLoader()
@@ -45,15 +55,29 @@ def test_postgres():
         print("请确保已在 quant 环境中运行: pip install psycopg2-binary")
         return False
         
-    dbname = input("请输入 PostgreSQL 数据库名称 (按回车跳过验证，默认输入 quant_db): ").strip()
-    if not dbname:
-        print("⏩ 跳过 PostgreSQL 验证。")
-        return True
-        
-    user = input("请输入 PostgreSQL 用户名 (默认 postgres): ").strip() or "postgres"
-    password = getpass.getpass("请输入 PostgreSQL 密码: ")
-    host = input("请输入主机地址 (默认 localhost): ").strip() or "localhost"
-    port = input("请输入端口号 (默认 5432): ").strip() or "5432"
+    env_db = os.getenv("PG_DBNAME", "quant_db")
+    env_user = os.getenv("PG_USER", "postgres")
+    env_pass = os.getenv("PG_PASSWORD", "")
+    env_host = os.getenv("PG_HOST", "localhost")
+    env_port = os.getenv("PG_PORT", "5432")
+
+    if env_pass:
+        print(f"检测到 .env 中已配置 PostgreSQL 密码，将自动尝试连接...")
+        dbname = env_db
+        user = env_user
+        password = env_pass
+        host = env_host
+        port = env_port
+    else:
+        dbname = input("请输入 PostgreSQL 数据库名称 (按回车跳过验证，默认输入 quant_db): ").strip()
+        if not dbname:
+            print("⏩ 跳过 PostgreSQL 验证。")
+            return True
+            
+        user = input("请输入 PostgreSQL 用户名 (默认 postgres): ").strip() or "postgres"
+        password = getpass.getpass("请输入 PostgreSQL 密码: ")
+        host = input("请输入主机地址 (默认 localhost): ").strip() or "localhost"
+        port = input("请输入端口号 (默认 5432): ").strip() or "5432"
     
     print(f"正在尝试连接至 postgresql://{user}:***@{host}:{port}/{dbname} ...")
     try:

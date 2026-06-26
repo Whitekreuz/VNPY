@@ -24,6 +24,7 @@ class DBManager:
             port=port
         )
         self.create_tables()
+        self.create_mapping_table()
 
     def create_tables(self):
         """建表操作"""
@@ -47,6 +48,21 @@ class DBManager:
             """)
             # 如果安装了 TimescaleDB，强烈建议在数据库中执行: 
             # SELECT create_hypertable('bardata', 'datetime', if_not_exists => TRUE);
+            self.conn.commit()
+
+    def create_mapping_table(self):
+        """建表操作: 主力合约映射表"""
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS main_contract_mapping (
+                    underlying VARCHAR(50),
+                    exchange VARCHAR(50),
+                    date DATE,
+                    main_symbol VARCHAR(50),
+                    sub_symbol VARCHAR(50),
+                    PRIMARY KEY (underlying, exchange, date)
+                );
+            """)
             self.conn.commit()
 
     def save_bar_data(self, bars: List[BarData]):

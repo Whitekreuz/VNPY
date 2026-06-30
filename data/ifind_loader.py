@@ -56,13 +56,17 @@ class IFinDLoader:
         # 将系统定义的 interval 转换为 iFinD 参数
         # THS_HF 支持分钟级数据
         if interval.endswith("m"):
-            ret = THS_HF(symbol, 'open;high;low;close;volume;amount', 'Fill:Blank', start_str, end_str)
+            ret = THS_HF(symbol, 'open;high;low;close;volume;amount;openInterest', 'Fill:Blank', start_str, end_str)
         else:
             # 默认日线调用 THS_HQ
-            ret = THS_HQ(symbol, 'open,high,low,close,volume,amount', '', start_str, end_str)
+            ret = THS_HQ(symbol, 'open,high,low,close,volume,amount,openInterest', '', start_str, end_str)
         
         if ret.errorcode != 0:
-            print(f"获取数据失败: {ret.errmsg}")
+            if ret.errorcode == -4226:
+                # 忽略权限错误或未上市的日志轰炸
+                pass
+            else:
+                print(f"获取数据失败: {symbol} - {ret.errmsg} (code: {ret.errorcode})")
             return pd.DataFrame()
             
         df = ret.data
@@ -77,7 +81,8 @@ class IFinDLoader:
             'low': 'low_price',
             'close': 'close_price',
             'volume': 'volume',
-            'amount': 'turnover'
+            'amount': 'turnover',
+            'openInterest': 'open_interest'
         })
         
         df['datetime'] = pd.to_datetime(df['datetime'])

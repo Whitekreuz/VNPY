@@ -13,6 +13,7 @@ for i, k in enumerate(keys):
     sym_keys = list(v['symbols'].keys())
     for j, sk in enumerate(sym_keys):
         sv = v['symbols'][sk]
+        sv['continuous'] = ["88", "888", "99"]
         line = f'            "{sk}": {json.dumps(sv, ensure_ascii=False)}'
         if j < len(sym_keys) - 1:
             line += ','

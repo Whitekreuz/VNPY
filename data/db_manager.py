@@ -111,3 +111,16 @@ class DBManager:
                 open_price=row[7], high_price=row[8], low_price=row[9], close_price=row[10]
             ))
         return bars
+
+    def get_max_datetime(self, symbol: str, exchange: str, interval: str) -> datetime:
+        query = """
+            SELECT MAX(datetime)
+            FROM bardata
+            WHERE symbol = %s AND exchange = %s AND interval = %s;
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(query, (symbol, exchange, interval))
+            row = cur.fetchone()
+            if row and row[0]:
+                return row[0]
+            return None

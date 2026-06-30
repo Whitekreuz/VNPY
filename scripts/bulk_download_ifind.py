@@ -72,6 +72,12 @@ def run_bulk_download():
         
         for symbol_raw, sym_info in cat_data['symbols'].items():
             base_sym, exchange = symbol_raw.split('.')
+            
+            # 由于当前 iFinD 账户没有 DCE 的分钟线权限，主动跳过大商所品种以节约时间和 API 请求
+            if exchange == 'DCE':
+                print(f"  ⏭️ 主动跳过大商所品种: {sym_info['name']} ({symbol_raw})")
+                continue
+                
             months = sym_info['months']
             name = sym_info['name']
             
@@ -79,8 +85,12 @@ def run_bulk_download():
                 for month in months:
                     total_contracts += 1
                     
-                    # 构造合约代码，例如: ag2006.SHF
-                    year_str = str(year)[-2:] # 取后两位 '20'
+                    # 构造合约代码，例如: ag2006.SHF, OI801.CZC
+                    if exchange == 'CZC':
+                        year_str = str(year)[-1:]
+                    else:
+                        year_str = str(year)[-2:]
+                    
                     contract_code = f"{base_sym}{year_str}{month}.{exchange}"
                     
                     # 确定该合约的合理生命周期：通常从交割前一年的对应月份开始，到交割当月的月末结束。
@@ -98,22 +108,22 @@ def run_bulk_download():
                     all_bars = []
                     
                     for chunk_start, chunk_end in chunks:
-                        df = loader.fetch_history_bars(contract_code, interval, chunk_start, chunk_end)
+                        df = loader.fetch_history_bars(contract_code, chunk_start, chunk_end, interval)
                         if df is not None and not df.empty:
                             # 转换为 BarData
                             for _, row in df.iterrows():
                                 bar = BarData(
                                     symbol=contract_code.split('.')[0], # ag2006
                                     exchange=exchange,
-                                    datetime=row['time'],
+                                    datetime=row['datetime'],
                                     interval=interval,
                                     volume=row['volume'],
-                                    turnover=row.get('amount', 0.0),
-                                    open_interest=row.get('openInterest', 0.0),
-                                    open_price=row['open'],
-                                    high_price=row['high'],
-                                    low_price=row['low'],
-                                    close_price=row['close']
+                                    turnover=row.get('turnover', 0.0),
+                                    open_interest=row.get('open_interest', 0.0),
+                                    open_price=row['open_price'],
+                                    high_price=row['high_price'],
+                                    low_price=row['low_price'],
+                                    close_price=row['close_price']
                                 )
                                 all_bars.append(bar)
                                 

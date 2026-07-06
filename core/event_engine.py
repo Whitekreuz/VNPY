@@ -15,6 +15,10 @@ class EventEngine:
         self._queue = asyncio.Queue()
         self._active = False
         self._task = None
+        try:
+            self.loop = asyncio.get_event_loop()
+        except RuntimeError:
+            self.loop = None
 
     def register(self, type_: str, handler: Callable):
         """注册事件处理函数"""
@@ -27,12 +31,18 @@ class EventEngine:
             self._handlers[type_].remove(handler)
 
     def put(self, event: Event):
-        """发送事件。如果在其他线程调用，需小心跨线程循环，可使用 call_soon_threadsafe"""
+        """发送事件"""
         if self._active:
             try:
                 self._queue.put_nowait(event)
             except asyncio.QueueFull:
                 pass
+
+    def put_threadsafe(self, event: Event):
+        """线程安全地发送事件 (用于在 C++ 等后台线程中向事件循环投递事件)"""
+        if self._active and self.loop:
+            self.loop.call_soon_threadsafe(self.put, event)
+
 
     async def _run(self):
         """引擎主循环，持续从队列中获取事件并处理"""
@@ -61,6 +71,10 @@ class EventEngine:
     def start(self):
         """启动事件引擎（必须在运行的 asyncio loop 中调用）"""
         self._active = True
+        try:
+            self.loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
         self._task = asyncio.create_task(self._run())
 
     async def stop(self):

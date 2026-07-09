@@ -33,6 +33,10 @@ class CtpGateway:
         self.td_connected = False
         self.td_logged_in = False
         
+        # CTP 客户端认证信息 (ReqAuthenticate 所需)
+        self.app_id = ""
+        self.auth_code = ""
+        
         # 订阅合约缓存
         self.subscribed_contracts = set()
         
@@ -51,6 +55,8 @@ class CtpGateway:
                 "broker_id": os.getenv("SIMNOW_BROKER_ID", "9999"),
                 "trade_front": os.getenv("SIMNOW_TRADE_FRONT", "tcp://180.168.146.187:10130"),
                 "md_front": os.getenv("SIMNOW_MD_FRONT", "tcp://180.168.146.187:10131"),
+                "app_id": os.getenv("SIMNOW_APP_ID", "simnow_client_test"),
+                "auth_code": os.getenv("SIMNOW_AUTH_CODE", "0000000000000000"),
             }
 
         self.investor_id = setting.get("investor_id", "")
@@ -58,6 +64,8 @@ class CtpGateway:
         self.broker_id = setting.get("broker_id", "9999")
         self.trade_front = setting.get("trade_front", "")
         self.md_front = setting.get("md_front", "")
+        self.app_id = setting.get("app_id", "simnow_client_test")
+        self.auth_code = setting.get("auth_code", "0000000000000000")
 
         if not self.investor_id or not self.password:
             print("⚠️ [CTP网关] 未检测到有效的 CTP 账户密码配置，跳过网关连接。")
@@ -300,9 +308,26 @@ class CtpTdSpi(tdapi.CThostFtdcTraderSpi):
         self.gateway = gateway
 
     def OnFrontConnected(self):
-        print("🌐 [CTP交易] 交易前置机连通，开始登录...")
+        print("🌐 [CTP交易] 交易前置机连通，开始客户端认证...")
         self.gateway.td_connected = True
         
+        # 现代 CTP 要求在 ReqUserLogin 之前先完成 ReqAuthenticate 鉴权
+        req = tdapi.CThostFtdcReqAuthenticateField()
+        req.BrokerID = self.gateway.broker_id
+        req.UserID = self.gateway.investor_id
+        req.AppID = self.gateway.app_id
+        req.AuthCode = self.gateway.auth_code
+        self.gateway.td_api.ReqAuthenticate(req, 0)
+
+    def OnRspAuthenticate(self, pRspAuthenticateField, pRspInfo, nRequestID, bIsLast):
+        """客户端认证回调 - 成功后才发起登录"""
+        if pRspInfo and pRspInfo.ErrorID != 0:
+            err_msg = pRspInfo.ErrorMsg.decode('gbk', errors='ignore') if isinstance(pRspInfo.ErrorMsg, bytes) else pRspInfo.ErrorMsg
+            print(f"❌ [CTP交易] 客户端认证失败！代码: {pRspInfo.ErrorID}, 原因: {err_msg}")
+            print("💡 提示：请检查 .env 中的 SIMNOW_APP_ID 和 SIMNOW_AUTH_CODE 配置是否正确。")
+            return
+        
+        print("🔐 [CTP交易] 客户端认证成功，开始登录...")
         req = tdapi.CThostFtdcReqUserLoginField()
         req.BrokerID = self.gateway.broker_id
         req.UserID = self.gateway.investor_id

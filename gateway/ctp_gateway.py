@@ -12,6 +12,12 @@ from core.models import TickData, OrderData, TradeData, Status, Direction, Offse
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(line_buffering=True, encoding='utf-8')
 
+def _to_str(val: object, encoding: str = 'gbk') -> str:
+    """将 CTP 字段统一转换为 str，兼容 bytes（旧版）和 str（新版 openctp_ctp）。"""
+    if isinstance(val, bytes):
+        return val.decode(encoding, errors='ignore')
+    return val or ""
+
 class CtpGateway:
     """
     轻量化 CTP 接口网关
@@ -201,7 +207,7 @@ class CtpMdSpi(mdapi.CThostFtdcMdSpi):
 
     def OnRspUserLogin(self, pRspUserLogin, pRspInfo, nRequestID, bIsLast):
         if pRspInfo and pRspInfo.ErrorID != 0:
-            err_msg = pRspInfo.ErrorMsg.decode('gbk', errors='ignore')
+            err_msg = _to_str(pRspInfo.ErrorMsg)
             print(f"❌ [CTP行情] 登录行情服务器失败！代码: {pRspInfo.ErrorID}, 原因: {err_msg}")
         else:
             print("✅ [CTP行情] 行情服务器登录成功！")
@@ -218,8 +224,8 @@ class CtpMdSpi(mdapi.CThostFtdcMdSpi):
             return
             
         try:
-            ctp_symbol = pDepthMarketData.InstrumentID.decode('utf-8')
-            raw_exchange = pDepthMarketData.ExchangeID.decode('utf-8') if pDepthMarketData.ExchangeID else ""
+            ctp_symbol = _to_str(pDepthMarketData.InstrumentID)
+            raw_exchange = _to_str(pDepthMarketData.ExchangeID)
             
             # 交易所映射还原
             from data.data_aligner import DataAligner
@@ -246,15 +252,28 @@ class CtpMdSpi(mdapi.CThostFtdcMdSpi):
                 db_symbol = ctp_symbol.upper()
                 
             # 解析时间
-            action_day = pDepthMarketData.ActionDay.decode('utf-8') if pDepthMarketData.ActionDay else datetime.now().strftime("%Y%m%d")
-            update_time = pDepthMarketData.UpdateTime.decode('utf-8') if pDepthMarketData.UpdateTime else "00:00:00"
+            action_day = _to_str(pDepthMarketData.ActionDay) or datetime.now().strftime("%Y%m%d")
+            update_time = _to_str(pDepthMarketData.UpdateTime) or "00:00:00"
             millisec = pDepthMarketData.UpdateMillisec if pDepthMarketData.UpdateMillisec else 0
-            
-            dt_str = f"{action_day} {update_time}.{millisec:03d}"
+
+            # 安全检测：若 ActionDay 与本机日期相差超过 1 天（如 7x24 回放环境），
+            # 则使用本机系统时间，避免生成错误的历史时间戳影响 Bar 合成
+            today_str = datetime.now().strftime("%Y%m%d")
             try:
-                dt = datetime.strptime(dt_str, "%Y%m%d %H:%M:%S.%f")
-            except ValueError:
+                from datetime import date
+                ad = date(int(action_day[:4]), int(action_day[4:6]), int(action_day[6:8]))
+                td = date(int(today_str[:4]), int(today_str[4:6]), int(today_str[6:8]))
+                if abs((ad - td).days) > 1:
+                    dt = datetime.now().replace(microsecond=0)
+                else:
+                    dt_str = f"{action_day} {update_time}.{millisec:03d}"
+                    try:
+                        dt = datetime.strptime(dt_str, "%Y%m%d %H:%M:%S.%f")
+                    except ValueError:
+                        dt = datetime.now()
+            except (ValueError, IndexError):
                 dt = datetime.now()
+
 
             # 转换累计成交量/成交额为增量
             cumulative_volume = float(pDepthMarketData.Volume)

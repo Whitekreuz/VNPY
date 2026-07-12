@@ -1,0 +1,1055 @@
+/* ==========================================================================
+   VNPY Quant Visualization Dashboard Stylesheet
+   Design System: Dual-Theme (Minimal Dark & Solarized Light)
+   ========================================================================== */
+
+/* 1. Theme Configuration & Colors */
+:root {
+    /* Default: Minimal Dark Theme (Apple Dark Style) */
+    --bg-app: #0e0e11;
+    --bg-main: #141416;
+    --bg-card: #1c1c1e;
+    --bg-hover: #2c2c2e;
+    --border-color: #2c2c2e;
+    
+    --text-main: #f2f2f7;
+    --text-muted: #8e8e93;
+    --text-inverse: #1c1c1e;
+    
+    --color-primary: #007aff;    /* Electric Blue */
+    --color-accent: #ff9f0a;     /* Bright Orange */
+    --color-success: #30d158;    /* Jade Green */
+    --color-danger: #ff453a;     /* Crimson Red */
+    --color-warning: #ffd60a;    /* Warning Yellow */
+    
+    --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    --border-radius: 12px;
+    --transition-speed: 0.25s;
+    --font-family: 'Outfit', 'Noto Sans SC', -apple-system, sans-serif;
+}
+
+[data-theme="solarized"] {
+    /* Theme 4: Solarized Light Theme (Warm & Soft Eye-friendly) */
+    --bg-app: #fdf6e3;
+    --bg-main: #f5eedb;
+    --bg-card: #eee8d5;
+    --bg-hover: #e4dbbf;
+    --border-color: #d3c7a3;
+    
+    --text-main: #586e75;
+    --text-muted: #93a1a1;
+    --text-inverse: #fdf6e3;
+    
+    --color-primary: #268bd2;    /* Solarized Blue */
+    --color-accent: #cb4b16;     /* Solarized Orange */
+    --color-success: #859900;    /* Solarized Green */
+    --color-danger: #dc322f;     /* Solarized Red */
+    --color-warning: #b58900;    /* Solarized Yellow */
+    
+    --box-shadow: 0 4px 20px rgba(101, 123, 131, 0.08);
+}
+
+/* 2. Global Resets & Typography */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    font-family: var(--font-family);
+    transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+h1, h2, h3, h4 {
+    font-weight: 600;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* 3. Base App Grid Layout */
+.app-container {
+    display: grid;
+    grid-template-columns: var(--sidebar-width, 260px) 1fr;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+}
+
+/* 4. Left Sidebar Styles */
+.sidebar {
+    position: relative;
+    background-color: var(--bg-main);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    justify-content: space-between;
+    transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 36px;
+}
+
+.brand-logo {
+    font-size: 24px;
+}
+
+.brand-text {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: var(--border-radius);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all var(--transition-speed) ease;
+}
+
+.menu-item:hover {
+    color: var(--text-main);
+    background-color: var(--bg-hover);
+}
+
+.menu-item.active {
+    color: var(--text-inverse);
+    background-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+}
+
+.sidebar-footer {
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+}
+
+.system-tag {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* 5. Right Main Content Panel */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-app);
+    height: 100vh;
+    overflow: hidden;
+    transition: background-color var(--transition-speed) ease;
+}
+
+/* Global Top Header */
+.global-header {
+    height: 70px;
+    background-color: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    flex-shrink: 0;
+    transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+}
+
+.page-title {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Cloud Sync Button */
+.btn-sync-db {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+}
+
+.btn-sync-db:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--text-muted);
+}
+
+.btn-sync-db.syncing .sync-icon {
+    display: inline-block;
+    animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Switch styling for Auto-time */
+.auto-time-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toggle-label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 20px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-hover);
+    transition: .3s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--text-main);
+    transition: .3s;
+}
+
+input:checked + .slider {
+    background-color: var(--color-primary);
+}
+
+input:checked + .slider:before {
+    transform: translateX(18px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--border-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-main);
+    transition: all var(--transition-speed) ease;
+}
+
+.theme-toggle:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--text-muted);
+}
+
+.theme-icon {
+    font-size: 16px;
+}
+
+/* Status Indicator Dot */
+.system-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border-color);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.green {
+    background-color: var(--color-success);
+    box-shadow: 0 0 8px var(--color-success);
+    animation: pulse 2s infinite;
+}
+
+.status-dot.red {
+    background-color: var(--color-danger);
+    box-shadow: 0 0 8px var(--color-danger);
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(48, 209, 88, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(48, 209, 88, 0); }
+}
+
+.status-label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* Content Area Wrapper */
+.content-wrapper {
+    flex-grow: 1;
+    padding: 32px;
+    overflow-y: auto;
+    background-color: var(--bg-app);
+    transition: background-color var(--transition-speed) ease;
+}
+
+/* Page Section Toggles */
+.page-section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.page-section.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 6. Card Component Layout */
+.card {
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 24px;
+    box-shadow: var(--box-shadow);
+    transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+.card-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Split Column Layout for Dashboard Panel */
+.page-layout-split {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* Panel Controls (Inputs) */
+.panel-control {
+    position: sticky;
+    top: 0;
+}
+
+.panel-results {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* 7. Forms Controls & Inputs */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 10px 14px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: all var(--transition-speed) ease;
+}
+
+.form-input:focus, .form-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.form-select[multiple] {
+    height: 110px;
+}
+
+.form-help {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all var(--transition-speed) ease;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: var(--text-inverse);
+}
+
+.btn-primary:hover {
+    background-color: #268bd2;
+    transform: translateY(-1px);
+}
+
+.btn-accent {
+    background-color: var(--color-accent);
+    color: var(--text-inverse);
+}
+
+.btn-accent:hover {
+    background-color: #cb4b16;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: var(--border-color);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.w-full {
+    width: 100%;
+}
+
+/* 8. Summary Indicator Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.metric-card {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.metric-value {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.text-accent {
+    color: var(--color-accent);
+}
+
+.text-danger {
+    color: var(--color-danger);
+}
+
+.text-success {
+    color: var(--color-success);
+}
+
+/* ECharts layout panels */
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+}
+
+.chart-title {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.echart-box {
+    width: 100%;
+    height: 400px;
+    position: relative;
+}
+
+.empty-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+/* K Line Contract Tab Selector */
+.tab-list {
+    display: flex;
+    gap: 8px;
+}
+
+.tab-btn {
+    padding: 4px 10px;
+    background-color: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all var(--transition-speed) ease;
+}
+
+.tab-btn.active, .tab-btn:hover {
+    color: var(--text-main);
+    border-color: var(--color-primary);
+    background-color: var(--bg-card);
+}
+
+/* 9. Data Table Component Styles */
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.data-table th {
+    color: var(--text-muted);
+    font-weight: 500;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table td {
+    padding: 14px 16px;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.data-table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+/* 10. Live Console Terminal Box */
+.terminal-log-box {
+    background-color: #050508;
+    color: #e5e5eb;
+    border: 1px solid #1a1a24;
+    border-radius: 6px;
+    padding: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    height: 380px;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
+.log-line.system {
+    color: #8c8c9c;
+}
+
+.log-line.warning {
+    color: var(--color-warning);
+}
+
+.log-line.error {
+    color: var(--color-danger);
+}
+
+.log-line.signal {
+    color: #00ccff;
+    font-weight: bold;
+}
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge-success { background-color: rgba(48, 209, 88, 0.15); color: var(--color-success); }
+.badge-danger { background-color: rgba(255, 69, 58, 0.15); color: var(--color-danger); }
+.badge-warning { background-color: rgba(255, 159, 10, 0.15); color: var(--color-accent); }
+
+.live-status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.status-name {
+    font-size: 13px;
+}
+
+/* ==========================================================================
+   Sidebar Resizer & Collapsing CSS Extensions
+   ========================================================================== */
+
+/* Resizer Handle */
+.sidebar-resizer {
+    width: 6px;
+    height: 100vh;
+    background-color: transparent;
+    cursor: col-resize;
+    position: absolute;
+    left: var(--sidebar-width, 260px);
+    top: 0;
+    z-index: 100;
+    transition: background-color 0.15s ease;
+}
+
+.sidebar-resizer:hover, .sidebar-resizer.active {
+    background-color: var(--color-primary);
+    opacity: 0.5;
+}
+
+/* Sidebar Toggle Collapse Button */
+.sidebar-toggle-btn {
+    position: absolute;
+    right: -12px;
+    top: 24px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    cursor: pointer;
+    z-index: 101;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: all var(--transition-speed) ease;
+}
+
+.sidebar-toggle-btn:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--color-primary);
+}
+
+/* Contracts Checkbox Scrollable List */
+.contracts-checkbox-list {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 140px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-main);
+    user-select: none;
+}
+
+.checkbox-container input {
+    cursor: pointer;
+}
+
+/* Collapsed Sidebar Styles overrides */
+.sidebar.collapsed {
+    padding: 24px 10px;
+}
+
+.sidebar.collapsed .brand-text,
+.sidebar.collapsed .menu-label,
+.sidebar.collapsed .sidebar-footer {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-brand {
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.sidebar.collapsed .brand-logo {
+    font-size: 28px;
+}
+
+.sidebar.collapsed .menu-item {
+    justify-content: center;
+    padding: 12px 0;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+}
+
+.sidebar.collapsed .menu-icon {
+    font-size: 18px;
+}
+
+/* ─── K-Line Chart Board ──────────────────────────────────────────────────── */
+.chart-board-layout {
+    display: flex;
+    gap: 16px;
+    height: 100%;
+    align-items: flex-start;
+}
+
+.chart-board-control {
+    width: 260px;
+    min-width: 220px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+    padding: 20px;
+}
+
+.chart-board-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* Interval Button Group */
+.interval-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.interval-btn {
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-main);
+    color: var(--text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font-family);
+    transition: all var(--transition-speed);
+}
+
+.interval-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.interval-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Indicator Checklist */
+.indicator-check-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Chart toolbar */
+.chart-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ECharts loading state */
+.echart-box.loading::after {
+    content: "加载中...";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: modal-fade-in 0.2s ease-out;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes modal-fade-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.modal-close {
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.modal-close:hover {
+    color: var(--text-main);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Custom select dropdown styling for indicator choices */
+.dropdown-indicator-container {
+    position: relative;
+    width: 100%;
+}
+
+.indicator-dropdown-selected {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    min-height: 38px;
+    user-select: none;
+}
+
+.indicator-dropdown-selected:hover {
+    border-color: var(--color-primary);
+}
+
+.indicator-dropdown-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: none;
+}
+
+.indicator-dropdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.indicator-dropdown-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.indicator-dropdown-item.active {
+    background-color: rgba(0, 122, 255, 0.1);
+}
+
+.indicator-dropdown-item .indicator-name {
+    color: var(--text-main);
+    font-size: 13px;
+}
+
+.indicator-dropdown-item .indicator-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-icon-setting {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--text-muted);
+}
+
+.btn-icon-setting:hover {
+    color: var(--color-primary);
+    background-color: var(--border-color);
+}
+

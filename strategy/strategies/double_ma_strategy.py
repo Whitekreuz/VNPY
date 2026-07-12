@@ -26,6 +26,7 @@ class DoubleMaStrategy(CtaTemplate):
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
         self.close_array = []
         self.pos = 0 # 当前持仓
+        self.history_bars = []  # 保存合成后的 60m K 线历史以供绘图分析
         
         # 核心：使用 K 线合成引擎将 1m 转化为 60m (1小时)
         self.bg = BarGenerator(
@@ -33,6 +34,7 @@ class DoubleMaStrategy(CtaTemplate):
             window=60, 
             on_window_bar=self.on_60m_bar
         )
+
         
     def on_init(self):
         self.write_log("策略初始化")
@@ -54,7 +56,9 @@ class DoubleMaStrategy(CtaTemplate):
         
     def on_60m_bar(self, bar: BarData):
         """60分钟(1小时) K线生成回调，在此执行主要策略逻辑"""
+        self.history_bars.append(bar)
         self.close_array.append(bar.close_price)
+
         
         # 缓存长度控制
         if len(self.close_array) > self.slow_window + 1:

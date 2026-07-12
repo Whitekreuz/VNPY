@@ -9,7 +9,19 @@ import argparse
 import pandas as pd
 from dotenv import load_dotenv
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+os.makedirs(os.path.abspath(os.path.join(os.path.dirname(__file__), '../scratch')), exist_ok=True)
+class Logger:
+    def __init__(self, filename):
+        self.log = open(filename, 'w', encoding='utf-8')
+    def write(self, message):
+        self.log.write(message)
+        self.log.flush()
+    def flush(self):
+        self.log.flush()
+
+sys.stdout = Logger(os.path.abspath(os.path.join(os.path.dirname(__file__), '../scratch/bulk_download_rqdata.log')))
+sys.stderr = sys.stdout
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data.db_manager import DBManager
 from core.models import BarData
@@ -141,10 +153,10 @@ def run_rq_download():
         print(f"获取合约列表失败: {e}")
         return
 
-    start_year = 2018
-    end_year = 2026
-    # 连续合约默认下载范围（2018年至今）
-    continuous_start = datetime(2018, 1, 1).date()
+    start_year = 2015
+    end_year = datetime.now().year + 2
+    # 连续合约默认下载范围（2015年至今）
+    continuous_start = datetime(2015, 1, 1).date()
     continuous_end = datetime.now().date()
     
     interval = "1m"

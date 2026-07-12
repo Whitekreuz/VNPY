@@ -32,22 +32,21 @@
 
 ### Phase 3: 策略引擎与事前风控 (Strategy Engine & Risk Control)
 定义量化策略的生命周期和系统“安全带”。
-- [ ] 开发标准化的 CTA 策略基类模板 (`strategy/template.py`)。
-- [ ] 独立剥离并完善分钟 K 线合成器 (`strategy/bar_generator.py`)。
-- [ ] 编写用于验证系统运转的演示策略 (`strategy/demo_strategy.py`)。
-- [ ] 开发极简但严格的全局事前风控拦截器，涵盖资金与流控 (`risk/risk_manager.py`)。
-- [ ] 撰写说明文档 (`docs/strategy_and_risk.md`) 并完成策略信号触发及风控阻断测试。
+- `[x]` 开发标准化的 CTA 策略基类模板 (`strategy/template.py`)。
+- `[x]` 独立剥离并完善分钟 K 线合成器 (`strategy/bar_generator.py`)。
+- `[x]` 编写用于验证系统运转的演示策略与双均线策略 (`strategy/strategies/double_ma_strategy.py`)。
+- `[x]` 开发极简但严格的全局事前风控拦截器，涵盖资金与流控 (`risk/risk_manager.py`)。
+- `[x]` 撰写说明文档 (`docs/strategy_and_risk.md`) 并完成策略信号触发及风控阻断测试。
 
 ### Phase 4: 交易网关接口 (Gateway Layer)
 对接真实世界，打通实盘与模拟盘行情及交易通道。
-- [ ] 制定并开发网关抽象基类 (`gateway/base_gateway.py`)，为期货与未来股票扩容定下规范。
-- [ ] 安装并引入 `vnpy_ctp` 底层 C++ 动态库。
-- [ ] 自主编写 CTP 适配器 (`gateway/ctp_gateway`)，将底层 CTP 结构转译为我们的标准体系。
-- [ ] 注册 SimNow 账号，进行全链路的实盘行情接收与模拟发单测试。
-- [ ] 撰写说明文档 (`docs/gateway.md`) 并完成连接测试 (`tests/test_gateway.py`)。
+- `[x]` 制定并开发网关抽象基类与对齐模块 (`data/data_aligner.py`)，为期货与未来股票扩容定下规范。
+- `[x]` 安装并引入 `openctp_ctp` 底层 C++ CTP 接口。
+- `[x]` 自主编写 CTP 适配器 (`gateway/ctp_gateway.py`)，将底层 CTP 结构转译为我们的标准体系。
+- `[x]` 注册 SimNow 账号，完成全链路的实盘行情接收、灾备切换与 Dry-Run 信号拦截测试。
+- `[x]` 撰写说明文档 (`docs/data_provider_alignment.md`) 并通过 Jupyter Notebook 验证测试 (`test_ctp_and_failover.ipynb`)。
 
 ### Phase 5: 现代 Web 可视化大屏 (Visualization Dashboard)
-剥离一切桌面端羁绊，打造现代化的量化操作控制台。
 - [ ] 开发基于 FastAPI 的后端数据服务，通过 WebSocket 桥接核心事件引擎，向外推送持仓、资金与日志流。
 - [ ] 基于数据库汇集各子策略资金曲线（投组管理理念），开发历史盈亏结算查询接口。
 - [ ] 开发前端 Web 控制台页面（监控面板、启停控制、Echarts 实时K线图表展示）。
@@ -56,4 +55,4 @@
 ---
 
 ## 📅 项目当前进展
-*当前任务聚焦*: **Phase 2 数据与回测模块已完成！准备启动 Phase 3**。
+*当前任务聚焦*: **Phase 4 交易网关与灾备测试已全面完成！准备启动 Phase 5 现代 Web 可视化大屏开发**。

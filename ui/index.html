@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderixest Trade 量化交易大盘</title>
+    <!-- Import Google Font Outfit & Noto Sans SC -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- ECharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        window.addEventListener('error', function(e) {
+            var errDiv = document.getElementById('global-error-banner');
+            if (!errDiv) {
+                errDiv = document.createElement('div');
+                errDiv.id = 'global-error-banner';
+                errDiv.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:#ff3b30; color:#fff; padding:15px; z-index:999999; font-family:monospace; font-size:14px; box-shadow:0 2px 10px rgba(0,0,0,0.5); white-space:pre-wrap;';
+                document.body.insertBefore(errDiv, document.body.firstChild);
+            }
+            errDiv.textContent += '\n[Error] ' + e.message + ' at ' + e.filename + ':' + e.lineno + ':' + e.colno;
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+            var errDiv = document.getElementById('global-error-banner');
+            if (!errDiv) {
+                errDiv = document.createElement('div');
+                errDiv.id = 'global-error-banner';
+                errDiv.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:#ff3b30; color:#fff; padding:15px; z-index:999999; font-family:monospace; font-size:14px; box-shadow:0 2px 10px rgba(0,0,0,0.5); white-space:pre-wrap;';
+                document.body.insertBefore(errDiv, document.body.firstChild);
+            }
+            errDiv.textContent += '\n[Promise Rejection] ' + e.reason;
+        });
+    </script>
+</head>
+<body>
+    <div class="app-container" id="app-layout">
+        <!-- 1. 左侧侧边栏 Sidebar -->
+        <aside class="sidebar" id="app-sidebar">
+            <!-- Sidebar Collapse Toggle Button -->
+            <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="折叠/展开侧边栏">◀</button>
+            
+            <div class="sidebar-brand">
+                <div class="brand-logo">⚡</div>
+                <div class="brand-text">Moderixest Trade</div>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="#chart" class="menu-item active" id="menu-chart">
+                    <span class="menu-icon">📊</span>
+                    <span class="menu-label">K线看板&指标</span>
+                </a>
+                <a href="#backtest" class="menu-item" id="menu-backtest">
+                    <span class="menu-icon">📈</span>
+                    <span class="menu-label">回测与组合看板</span>
+                </a>
+                <a href="#pool" class="menu-item" id="menu-pool">
+                    <span class="menu-icon">💼</span>
+                    <span class="menu-label">策略池历史</span>
+                </a>
+                <a href="#optimize" class="menu-item" id="menu-optimize">
+                    <span class="menu-icon">🧬</span>
+                    <span class="menu-label">多进程寻优</span>
+                </a>
+                <a href="#paper" class="menu-item" id="menu-paper">
+                    <span class="menu-icon">🎮</span>
+                    <span class="menu-label">模拟盘交易</span>
+                </a>
+                <a href="#live" class="menu-item" id="menu-live">
+                    <span class="menu-icon">🚨</span>
+                    <span class="menu-label">实盘与预警</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="system-tag">v3.5 - Custom Aligned</div>
+            </div>
+        </aside>
+        
+        <!-- Sidebar Resizer Handle -->
+        <div class="sidebar-resizer" id="sidebar-resizer"></div>
+
+        <!-- 2. 右侧主控制区 -->
+        <main class="main-content">
+            <!-- 全局顶部导航栏 Global Header -->
+            <header class="global-header">
+                <div class="header-left">
+                    <h1 class="page-title" id="page-title-text">策略回测与组合看板</h1>
+                </div>
+                
+                <div class="header-right">
+                    <!-- 数据库手动同步云按钮 -->
+                    <button class="btn-sync-db" id="btn-sync-db" title="手动拉取 RiceQuant/TqSdk 最新数据同步到主数据库">
+                        <span class="sync-icon">☁️</span>
+                        <span class="sync-text">同步主数据库</span>
+                    </button>
+                    
+                    <!-- 自适应时间切换 -->
+                    <div class="auto-time-toggle">
+                        <label class="switch" title="开启后，白天08:00-18:00自动切换日晒明亮主题，其余时间自动切暗黑主题">
+                            <input type="checkbox" id="auto-time-checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">光感时间模式</span>
+                    </div>
+
+                    <!-- 主题切换按钮 -->
+                    <button class="theme-toggle" id="theme-toggle-btn" title="手动切换日盘(明亮)/夜盘(暗黑)主题">
+                        <span class="theme-icon" id="theme-icon-el">🌙</span>
+                    </button>
+
+                    <!-- 系统状态指示灯 -->
+                    <div class="system-status-indicator">
+                        <span class="status-dot green" id="ctp-status-dot"></span>
+                        <span class="status-label">CTP 行情网关</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 3. 主显示区域 Content Wrapper -->
+            <div class="content-wrapper">
+                
+                <!-- === PAGE 6: K-LINE CHART BOARD === -->
+                <section class="page-section active" id="page-chart">
+                    <div class="chart-board-layout">
+                        <!-- Left Control Panel -->
+                        <div class="chart-board-control card">
+                            <h2 class="section-title">K线看板 · 指标工坊</h2>
+
+                            <div class="form-group">
+                                <label for="chart-sectors">板块</label>
+                                <select id="chart-sectors" class="form-select">
+                                    <option value="">-- 请选择板块 --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="chart-varieties">品种</label>
+                                <select id="chart-varieties" class="form-select" disabled>
+                                    <option value="">-- 请先选择板块 --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="chart-contract">合约</label>
+                                <select id="chart-contract" class="form-select" disabled>
+                                    <option value="">-- 请先选择品种 --</option>
+                                </select>
+                            </div>
+
+                            <!-- Interval Selector -->
+                            <div class="form-group">
+                                <label>K线周期</label>
+                                <div class="interval-btn-group" id="chart-interval-group">
+                                    <button class="interval-btn" data-interval="1m">1分</button>
+                                    <button class="interval-btn" data-interval="5m">5分</button>
+                                    <button class="interval-btn" data-interval="15m">15分</button>
+                                    <button class="interval-btn" data-interval="30m">30分</button>
+                                    <button class="interval-btn" data-interval="1h">1小时</button>
+                                    <button class="interval-btn active" data-interval="1d">日线</button>
+                                </div>
+                            </div>
+
+                            <!-- Date Range -->
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="chart-start">开始日期</label>
+                                    <input type="date" id="chart-start" class="form-input" value="2020-01-01">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chart-end">结束日期</label>
+                                    <input type="date" id="chart-end" class="form-input">
+                                </div>
+                            </div>
+
+                            <!-- Main Chart Indicators -->
+                            <div class="form-group">
+                                <label>主图指标 (可多选)</label>
+                                <div class="dropdown-indicator-container">
+                                    <div class="indicator-dropdown-selected" id="main-indicator-selected">
+                                        <span>已选择: MA</span>
+                                        <span>▼</span>
+                                    </div>
+                                    <div class="indicator-dropdown-list" id="main-indicator-list">
+                                        <!-- Will be rendered dynamically via JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sub Chart Indicators -->
+                            <div class="form-group">
+                                <label>副图指标 (可多选)</label>
+                                <div class="dropdown-indicator-container">
+                                    <div class="indicator-dropdown-selected" id="sub-indicator-selected">
+                                        <span>已选择: MACD</span>
+                                        <span>▼</span>
+                                    </div>
+                                    <div class="indicator-dropdown-list" id="sub-indicator-list">
+                                        <!-- Will be rendered dynamically via JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary w-full" id="btn-load-chart">
+                                <span>📈 加载K线图</span>
+                            </button>
+
+                            <div class="chart-status" id="chart-status" style="margin-top:10px; font-size:12px; color: var(--text-muted);"></div>
+                        </div>
+
+                        <!-- Right: Chart Area -->
+                        <div class="chart-board-main">
+                            <!-- Main K-Line Chart -->
+                            <div class="chart-container card" style="flex: 3; min-height: 360px;">
+                                <div class="chart-header">
+                                    <span class="chart-title" id="chart-main-title">🕯️ K线主图 — 请选择合约</span>
+                                    <div class="chart-toolbar">
+                                        <button class="btn btn-sm btn-secondary" id="btn-chart-zoom-reset">重置缩放</button>
+                                    </div>
+                                </div>
+                                <div id="chart-kline-main" class="echart-box" style="height: 380px;">
+                                    <div class="empty-placeholder">请在左侧选择品种与合约，然后点击"加载K线图"</div>
+                                </div>
+                            </div>
+
+                            <!-- Sub Indicator Charts -->
+                            <div id="chart-sub-panel" style="display:none;">
+                                <div class="chart-container card" style="min-height:180px;">
+                                    <div class="chart-header">
+                                        <span class="chart-title" id="chart-sub-title">副图指标</span>
+                                    </div>
+                                    <div id="chart-kline-sub" class="echart-box" style="height: 180px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- === PAGE 1: BACKTEST CONSOLE === -->
+                <section class="page-section" id="page-backtest">
+                    <div class="page-layout-split">
+                        <!-- Left Panel: Form Control -->
+                        <div class="panel-control card">
+                            <h2 class="section-title">回测参数配置</h2>
+                            <form id="backtest-form" onsubmit="return false;">
+                                <div class="form-group">
+                                    <label>选择板块 (支持多选)</label>
+                                    <div class="contracts-checkbox-list" id="backtest-sectors-list">
+                                        <span class="text-muted" style="font-size:12px;">加载中...</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>选择品种 (支持多选)</label>
+                                    <div class="contracts-checkbox-list" id="backtest-varieties-list">
+                                        <span class="text-muted" style="font-size:12px;">请先选择板块...</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>选择合约 (支持多选)</label>
+                                    <div class="contracts-checkbox-list" id="backtest-contracts-list">
+                                        <span class="text-muted" style="font-size:12px;">请先选择品种...</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>已选复盘品种列表</label>
+                                    <div class="selected-contracts-container" id="backtest-selected-list" style="min-height: 50px; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; display: flex; flex-wrap: wrap; gap: 8px;">
+                                        <span class="text-muted" style="font-size:12px; margin: auto;">暂无选择</span>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-add-selected" style="margin-top: 8px;">➕ 添加所选合约到列表</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-selected" style="margin-top: 8px;">🗑️ 清空列表</button>
+                                </div>
+
+                                <div class="form-grid-2">
+                                    <div class="form-group">
+                                        <label for="backtest-start">开始日期</label>
+                                        <input type="date" id="backtest-start" class="form-input" value="2026-01-01">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="backtest-end">结束日期</label>
+                                        <input type="date" id="backtest-end" class="form-input" value="2026-07-01">
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-2">
+                                    <div class="form-group">
+                                        <label for="param-fast">快线窗口 (Fast)</label>
+                                        <input type="number" id="param-fast" class="form-input" value="10" min="2" max="100">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-slow">慢线窗口 (Slow)</label>
+                                        <input type="number" id="param-slow" class="form-input" value="30" min="5" max="200">
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-3">
+                                    <div class="form-group" style="grid-column: span 2;">
+                                        <label for="param-capital">初始资金 (元)</label>
+                                        <input type="number" id="param-capital" class="form-input" value="1000000" step="100000">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-margin">保证金率 (%)</label>
+                                        <input type="number" id="param-margin" class="form-input" value="10" min="1" max="100">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="param-commission">手续费率 (万分之)</label>
+                                    <input type="number" id="param-commission" class="form-input" value="0.15" step="0.05">
+                                </div>
+
+                                <button class="btn btn-primary w-full" id="btn-run-backtest">
+                                    <span class="btn-text">🚀 运行回测 / 组合回测</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Right Panel: Charts and Metrics -->
+                        <div class="panel-results">
+                            <!-- Summary Cards -->
+                            <div class="metrics-grid">
+                                <div class="metric-card card">
+                                    <div class="metric-label">组合总收益率</div>
+                                    <div class="metric-value" id="metric-total-return">--</div>
+                                </div>
+                                <div class="metric-card card">
+                                    <div class="metric-label">组合夏普比率</div>
+                                    <div class="metric-value text-accent" id="metric-sharpe">--</div>
+                                </div>
+                                <div class="metric-card card">
+                                    <div class="metric-label">最大组合回撤</div>
+                                    <div class="metric-value text-danger" id="metric-drawdown">--</div>
+                                </div>
+                                <div class="metric-card card">
+                                    <div class="metric-label">最大保证金占用 / 胜率</div>
+                                    <div class="metric-value" id="metric-margin-win">--</div>
+                                </div>
+                            </div>
+
+                            <!-- ECharts Placeholder -->
+                            <div class="chart-container card">
+                                <div class="chart-header">
+                                    <span class="chart-title">📈 组合资金权益、保证金与回撤曲线</span>
+                                    <div class="chart-actions">
+                                        <button class="btn btn-sm btn-secondary" id="btn-save-pool" style="display:none;">📥 保存到策略池</button>
+                                    </div>
+                                </div>
+                                <div id="chart-equity" class="echart-box">
+                                    <div class="empty-placeholder">配置左侧回测参数并点击“运行回测”后开始渲染图表</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tab Content for Candlestick Charts of individual symbols -->
+                            <div class="chart-container card" id="candle-chart-container" style="display:none;">
+                                <div class="chart-header">
+                                    <span class="chart-title">🕯️ 单合约交易买卖点 K 线图</span>
+                                    <div class="tab-list" id="candle-symbol-tabs">
+                                        <!-- Dynamically generated buttons for selected symbols -->
+                                    </div>
+                                </div>
+                                <div id="chart-candle" class="echart-box"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- === PAGE 2: STRATEGY POOL === -->
+                <section class="page-section" id="page-pool">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="section-title">我的策略池 (已存回测历史)</h2>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="pool-table">
+                                <thead>
+                                    <tr>
+                                        <th>保存时间</th>
+                                        <th>策略名称</th>
+                                        <th>回测合约</th>
+                                        <th>参数设置</th>
+                                        <th>总收益率</th>
+                                        <th>夏普比率</th>
+                                        <th>最大回撤</th>
+                                        <th>备注</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pool-table-body">
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted">策略池暂无保存的历史记录</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- === PAGE 3: PARAMETER OPTIMIZER === -->
+                <section class="page-section" id="page-optimize">
+                    <div class="page-layout-split">
+                        <div class="panel-control card">
+                            <h2 class="section-title">参数与周期寻优配置</h2>
+                            <form id="optimize-form" onsubmit="return false;">
+                                <div class="form-group">
+                                    <label for="opt-strategy">选择交易策略</label>
+                                    <select id="opt-strategy" class="form-select">
+                                        <option value="DoubleMaStrategy">DoubleMaStrategy (双均线策略)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="opt-sectors">选择板块</label>
+                                    <select id="opt-sectors" class="form-select">
+                                        <option value="">-- 请选择板块 --</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="opt-varieties">选择品种</label>
+                                    <select id="opt-varieties" class="form-select" disabled>
+                                        <option value="">-- 请先选择板块 --</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="opt-symbol">选择寻优合约</label>
+                                    <select id="opt-symbol" class="form-select" disabled>
+                                        <option value="">-- 请选择合约 --</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-grid-2">
+                                    <div class="form-group">
+                                        <label for="opt-start">开始日期</label>
+                                        <input type="date" id="opt-start" class="form-input" value="2026-01-01">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="opt-end">结束日期</label>
+                                        <input type="date" id="opt-end" class="form-input" value="2026-07-01">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="opt-mode">选择寻优模式</label>
+                                    <select id="opt-mode" class="form-select">
+                                        <option value="param">参数网格寻优 (指定K线周期)</option>
+                                        <option value="interval">K线周期寻优 (指定参数组合)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Box 1: Parameter Grid Inputs (Shown when mode is 'param') -->
+                                <div id="opt-box-param">
+                                    <div class="form-group">
+                                        <label for="opt-interval">固定 K 线周期</label>
+                                        <select id="opt-interval" class="form-select">
+                                            <option value="1m">1分钟线</option>
+                                            <option value="5m">5分钟线</option>
+                                            <option value="15m">15分钟线</option>
+                                            <option value="30m">30分钟线</option>
+                                            <option value="1h">1小时线</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>快线范围 (Fast Grid)</label>
+                                        <div class="form-grid-3">
+                                            <input type="number" id="opt-fast-start" class="form-input" value="5">
+                                            <input type="number" id="opt-fast-end" class="form-input" value="15">
+                                            <input type="number" id="opt-fast-step" class="form-input" value="5">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>慢线范围 (Slow Grid)</label>
+                                        <div class="form-grid-3">
+                                            <input type="number" id="opt-slow-start" class="form-input" value="20">
+                                            <input type="number" id="opt-slow-end" class="form-input" value="40">
+                                            <input type="number" id="opt-slow-step" class="form-input" value="10">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Box 2: Interval Selection Inputs (Shown when mode is 'interval') -->
+                                <div id="opt-box-interval" style="display:none;">
+                                    <div class="form-grid-2">
+                                        <div class="form-group">
+                                            <label for="opt-target-fast">固定快线 (Fast)</label>
+                                            <input type="number" id="opt-target-fast" class="form-input" value="10">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="opt-target-slow">固定慢线 (Slow)</label>
+                                            <input type="number" id="opt-target-slow" class="form-input" value="30">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>待测试周期队列</label>
+                                        <div class="contracts-checkbox-list" style="padding: 10px; max-height: unset;">
+                                            <label class="checkbox-container">
+                                                <input type="checkbox" name="opt-intervals" value="1m" checked> 1m (1分钟线)
+                                            </label>
+                                            <label class="checkbox-container">
+                                                <input type="checkbox" name="opt-intervals" value="5m" checked> 5m (5分钟线)
+                                            </label>
+                                            <label class="checkbox-container">
+                                                <input type="checkbox" name="opt-intervals" value="15m" checked> 15m (15分钟线)
+                                            </label>
+                                            <label class="checkbox-container">
+                                                <input type="checkbox" name="opt-intervals" value="30m" checked> 30m (30分钟线)
+                                            </label>
+                                            <label class="checkbox-container">
+                                                <input type="checkbox" name="opt-intervals" value="1h" checked> 1h (1小时线)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="opt-processes">寻优进程池并发数</label>
+                                    <input type="number" id="opt-processes" class="form-input" value="2" min="1" max="8">
+                                </div>
+                                <button class="btn btn-accent w-full" id="btn-run-optimize">
+                                    <span class="btn-text">🧬 启动多进程寻优</span>
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <div class="panel-results">
+                            <!-- Progress Bar -->
+                            <div class="card" id="opt-progress-card" style="display:none; margin-bottom: 20px;">
+                                <div class="progress-header">
+                                    <span id="opt-status-text">正在并行网格搜索中...</span>
+                                    <span id="opt-percent-text">0%</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" id="opt-progress-fill" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- ECharts Heatmap / Bar chart -->
+                            <div class="chart-container card">
+                                <div class="chart-header">
+                                    <span class="chart-title" id="opt-chart-title">📊 寻优效果参数敏感度热力图 (Sharpe Ratio)</span>
+                                </div>
+                                <div id="chart-optimize" class="echart-box">
+                                    <div class="empty-placeholder">在左侧设置网格参数后，点击“启动多进程寻优”后开始渲染图表</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Rankings Table -->
+                            <div class="card" id="opt-results-card" style="display:none; margin-top:20px;">
+                                <div class="card-header">
+                                    <h3 class="section-title" id="opt-results-title">最优参数组合排行</h3>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="data-table" id="opt-table">
+                                        <thead>
+                                            <tr id="opt-table-header">
+                                                <th>排名</th>
+                                                <th>参数组合 (Fast / Slow)</th>
+                                                <th>夏普比率 (Sharpe)</th>
+                                                <th>总收益率</th>
+                                                <th>最大回撤</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="opt-table-body">
+                                            <!-- Populated dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- === PAGE 4: PAPER TRADING === -->
+                <section class="page-section" id="page-paper">
+                    <!-- Top Summary Cards -->
+                    <div class="metrics-grid" style="margin-bottom: 24px;">
+                        <div class="metric-card card">
+                            <div class="metric-label">虚拟账户权益</div>
+                            <div class="metric-value text-success" id="paper-account-equity">1,000,000.00</div>
+                        </div>
+                        <div class="metric-card card">
+                            <div class="metric-label">可用资金 (现金)</div>
+                            <div class="metric-value" id="paper-account-cash">1,000,000.00</div>
+                        </div>
+                        <div class="metric-card card">
+                            <div class="metric-label">持仓占用保证金</div>
+                            <div class="metric-value text-accent" id="paper-account-margin">0.00</div>
+                        </div>
+                        <div class="metric-card card">
+                            <div class="metric-label">持仓浮动盈亏 (P&L)</div>
+                            <div class="metric-value" id="paper-account-pnl">0.00</div>
+                        </div>
+                    </div>
+
+                    <div class="page-layout-split" style="grid-template-columns: 320px 1fr;">
+                        <!-- Left Control: Place Order -->
+                        <div class="panel-control card">
+                            <h2 class="section-title">虚拟委托终端</h2>
+                            <form id="paper-order-form" onsubmit="return false;" style="margin-top: 15px;">
+                                <div class="form-group">
+                                    <label for="paper-order-symbol">选择交易合约</label>
+                                    <select id="paper-order-symbol" class="form-select">
+                                        <!-- Dynamically populated standard contracts -->
+                                    </select>
+                                </div>
+                                <div class="form-grid-2">
+                                    <div class="form-group">
+                                        <label for="paper-order-dir">交易方向</label>
+                                        <select id="paper-order-dir" class="form-select">
+                                            <option value="LONG">买开 (LONG)</option>
+                                            <option value="SHORT">卖开 (SHORT)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="paper-order-offset">开平仓属性</label>
+                                        <select id="paper-order-offset" class="form-select">
+                                            <option value="OPEN">开仓 (OPEN)</option>
+                                            <option value="CLOSE">平仓 (CLOSE)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-grid-2">
+                                    <div class="form-group">
+                                        <label for="paper-order-price">限价价格</label>
+                                        <input type="number" id="paper-order-price" class="form-input" value="3000">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="paper-order-volume">委托数量 (手)</label>
+                                        <input type="number" id="paper-order-volume" class="form-input" value="1" min="1">
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary w-full" id="btn-paper-submit">
+                                    <span class="btn-text">⚡ 提交虚拟委托</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Right Panel: Positions and Orders -->
+                        <div class="panel-results">
+                            <!-- Positions Table -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="section-title">当前虚拟持仓</h3>
+                                    <button class="btn btn-sm btn-secondary" id="btn-paper-refresh">🔄 刷新数据</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="data-table" id="paper-position-table">
+                                        <thead>
+                                            <tr>
+                                                <th>合约</th>
+                                                <th>方向</th>
+                                                <th>持仓均价</th>
+                                                <th>持仓手数</th>
+                                                <th>最新价格</th>
+                                                <th>占用保证金</th>
+                                                <th>浮动盈亏</th>
+                                                <th>快速操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="paper-position-body">
+                                            <tr>
+                                                <td colspan="8" class="text-center text-muted">当前账户无持仓</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Trade History -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="section-title">模拟成交历史历史</h3>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="data-table" id="paper-trades-table">
+                                        <thead>
+                                            <tr>
+                                                <th>成交时间</th>
+                                                <th>成交ID</th>
+                                                <th>合约</th>
+                                                <th>方向</th>
+                                                <th>开平</th>
+                                                <th>成交价格</th>
+                                                <th>成交手数</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="paper-trades-body">
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted">暂无虚拟交易成交记录</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- === PAGE 5: LIVE MONITOR === -->
+                <section class="page-section" id="page-live">
+                    <div class="page-layout-split">
+                        <div class="panel-control card" style="flex: 1;">
+                            <h2 class="section-title">CTP 实盘控制台</h2>
+                            <div class="live-status-list">
+                                <div class="status-item">
+                                    <span class="status-name">行情前置服务器 (MD)</span>
+                                    <span class="badge badge-success" id="live-md-status">已连接</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-name">交易前置服务器 (TD)</span>
+                                    <span class="badge badge-danger" id="live-td-status">未连接</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-name">Dry-Run 信号拦截</span>
+                                    <span class="badge badge-warning">拦截警告模式</span>
+                                </div>
+                            </div>
+                            <small class="text-muted" style="margin-top:15px; display:block;">注：本环境通过 7x24 服务进行灾备模拟</small>
+                        </div>
+                        
+                        <div class="panel-results" style="flex: 2;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="section-title">实时风控与信号推送日志</h2>
+                                </div>
+                                <div class="terminal-log-box" id="live-logs">
+                                    <div class="log-line system">[SYSTEM] 监听实时信号端口就绪，等待数据...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+
+
+            </div>
+        </main>
+    </div>
+    
+    <!-- 指标配置 Modal -->
+    <div id="indicator-settings-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="indicator-settings-title">指标参数设置</h3>
+                <span class="modal-close" id="btn-indicator-settings-close">&times;</span>
+            </div>
+            <div class="modal-body" id="indicator-settings-body">
+                <!-- 动态生成 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-indicator-settings-cancel">取消</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-indicator-settings-save">保存配置</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

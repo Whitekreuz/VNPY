@@ -81,5 +81,10 @@ class CtaBacktester:
             
         return trade.orderid
         
+    def cancel_order(self, strategy, vt_orderid: str):
+        """模拟撤单（回测中已即时成交，此处仅记录状态）"""
+        self.write_log(f"策略 {strategy.strategy_name} 请求撤单: {vt_orderid}")
+        
     def write_log(self, msg: str):
         print(f"[{self.datetime}] {msg}")
+

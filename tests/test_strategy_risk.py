@@ -29,8 +29,8 @@ class TestStrategyRisk(unittest.TestCase):
             
         bg = BarGenerator(on_bar, window=5, on_window_bar=on_5m_bar)
         
-        # 模拟产生一系列 tick，跨越 6 分钟
-        for minute in range(1, 7):
+        # 模拟产生一系列 tick，从 0 分钟到 5 分钟 (共 6 分钟数据)
+        for minute in range(0, 6):
             for second in [0, 30]:
                 tick = TickData(
                     symbol="IF2401", exchange="CFFEX",
@@ -45,18 +45,20 @@ class TestStrategyRisk(unittest.TestCase):
         # 强制结束当前分钟 (产生一个不同分钟的 tick 触发最后一条1分钟线的生成)
         final_tick = TickData(
             symbol="IF2401", exchange="CFFEX",
-            datetime=datetime(2024, 1, 1, 9, 7, 0),
-            last_price=4007.0
+            datetime=datetime(2024, 1, 1, 9, 6, 0),
+            last_price=4006.0
         )
         bg.update_tick(final_tick)
         
-        # 检查是否生成了 6 根 1 分钟线
+        # 检查是否生成了 6 根 1 分钟线 (00, 01, 02, 03, 04, 05)
         self.assertEqual(len(bars_1m), 6)
         
-        # 由于我们设置 window=5，前 5 根 1 分钟线应该合成出 1 根 5 分钟线
+        # 由于我们设置 window=5，前 5 根 1 分钟线 (00, 01, 02, 03, 04) 应该合成出 1 根 5 分钟线
+        # 第 6 根 (05) 还在缓存中，尚未到 09 边界，因而只生成 1 根 5 分钟线
         self.assertEqual(len(bars_5m), 1)
         self.assertEqual(bars_5m[0].interval, "5m")
         self.assertEqual(bars_5m[0].volume, 100) # (1分钟线每根20volume, 5根=100)
+
 
     def test_risk_manager(self):
         """测试事前风控能否正确拦截非法报单"""
@@ -95,5 +97,63 @@ class TestStrategyRisk(unittest.TestCase):
         # 再次报单失败
         self.assertFalse(rm.check_order(order2))
 
+    def test_risk_manager_auto_reset(self):
+        """测试事前风控是否能够在一秒后自适应解锁流控限制"""
+        engine = DummyEngine()
+        rm = RiskManager(engine)
+        order = OrderData(symbol="IF2401", exchange="CFFEX", orderid="1")
+        
+        rm.order_flow_limit = 1
+        self.assertTrue(rm.check_order(order))
+        # 第二次在同秒内必定被拦截
+        self.assertFalse(rm.check_order(order))
+        
+        # 模拟时间流逝（直接修改内部缓存的时间戳为未来的某一秒）
+        rm._last_second -= 2
+        
+        # 此时应该能够自动重置并报单成功
+        self.assertTrue(rm.check_order(order))
+
+    def test_bar_generator_missing_minutes(self):
+        """测试 BarGenerator 在有分钟缺失时，是否仍能根据时间边界准确聚合，不出现数据错位"""
+        bars_5m = []
+        def on_bar(bar: BarData):
+            bg.update_bar(bar)
+        def on_5m_bar(bar: BarData):
+            bars_5m.append(bar)
+            
+        bg = BarGenerator(on_bar, window=5, on_window_bar=on_5m_bar)
+        
+        # 喂入 09:00:00 的一分钟 bar
+        bar0 = BarData(symbol="IF2401", exchange="CFFEX", datetime=datetime(2024, 1, 1, 9, 0), volume=10, interval="1m")
+        # 喂入 09:01:00 的一分钟 bar
+        bar1 = BarData(symbol="IF2401", exchange="CFFEX", datetime=datetime(2024, 1, 1, 9, 1), volume=10, interval="1m")
+        # 09:02:00 和 09:03:00 缺失
+        # 喂入 09:04:00 的一分钟 bar，它是这个 5m 窗口的边界 (04)
+        bar4 = BarData(symbol="IF2401", exchange="CFFEX", datetime=datetime(2024, 1, 1, 9, 4), volume=10, interval="1m")
+        
+        bg.update_bar(bar0)
+        bg.update_bar(bar1)
+        bg.update_bar(bar4)
+        
+        # 检查是否成功输出了一根 5 分钟 bar（因为 9:04 是边界）
+        self.assertEqual(len(bars_5m), 1)
+        # 它的量应该是 30（10 * 3 根 K 线，缺了 2 根）
+        self.assertEqual(bars_5m[0].volume, 30)
+        
+        # 喂入 09:05:00 属于下一根 5m bar 的开头，应该不会混入上一根
+        bar5 = BarData(symbol="IF2401", exchange="CFFEX", datetime=datetime(2024, 1, 1, 9, 5), volume=10, interval="1m")
+        bg.update_bar(bar5)
+        self.assertEqual(len(bars_5m), 1)
+
+        # 喂入 09:12:00，发生大空缺跨窗口，应该触发对 09:05 那根 bar 的自动结算推送
+        bar12 = BarData(symbol="IF2401", exchange="CFFEX", datetime=datetime(2024, 1, 1, 9, 12), volume=10, interval="1m")
+        bg.update_bar(bar12)
+        # 此时应该推送了 09:05 区间的 bar，总数变为 2
+        self.assertEqual(len(bars_5m), 2)
+        self.assertEqual(bars_5m[1].volume, 10)
+        self.assertEqual(bars_5m[1].datetime, datetime(2024, 1, 1, 9, 5))
+
 if __name__ == '__main__':
     unittest.main()
+

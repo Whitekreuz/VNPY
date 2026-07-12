@@ -58,6 +58,7 @@ class BarGenerator:
         if not self.window or not self.on_window_bar:
             return
             
+        # 如果当前没有 window_bar，直接创建
         if not self.window_bar:
             self.window_bar = BarData(
                 symbol=bar.symbol,
@@ -72,16 +73,48 @@ class BarGenerator:
                 open_interest=bar.open_interest,
                 interval=f"{self.window}m"
             )
+            return
+
+        # 检查是否跨越了时间窗口边界
+        # 算法：计算两个 Bar 的分钟区间起始点是否一致
+        # 为了应对跨小时的情况，使用当天总分钟数来进行计算
+        t1 = self.window_bar.datetime.hour * 60 + self.window_bar.datetime.minute
+        t2 = bar.datetime.hour * 60 + bar.datetime.minute
+        
+        # 边界计算
+        start1 = t1 - (t1 % self.window)
+        start2 = t2 - (t2 % self.window)
+        
+        # 如果区间起始点不一致，说明跨越了窗口，需要推送旧的并开辟新的
+        if start1 != start2:
+            self.on_window_bar(self.window_bar)
+            
+            # 创建新的 window_bar
+            self.window_bar = BarData(
+                symbol=bar.symbol,
+                exchange=bar.exchange,
+                datetime=bar.datetime,
+                open_price=bar.open_price,
+                high_price=bar.high_price,
+                low_price=bar.low_price,
+                close_price=bar.close_price,
+                volume=bar.volume,
+                turnover=bar.turnover,
+                open_interest=bar.open_interest,
+                interval=f"{self.window}m"
+            )
         else:
+            # 在同一个区间内，累加更新
             self.window_bar.high_price = max(self.window_bar.high_price, bar.high_price)
             self.window_bar.low_price = min(self.window_bar.low_price, bar.low_price)
             self.window_bar.close_price = bar.close_price
             self.window_bar.volume += bar.volume
             self.window_bar.turnover += bar.turnover
             self.window_bar.open_interest = bar.open_interest
-            
-        self.interval_count += 1
-        if self.interval_count >= self.window:
+
+        # 再次检查：如果是窗口边界的最后一根（例如 04, 09, 14 分），则在此刻直接推送，避免延迟
+        t_curr = bar.datetime.hour * 60 + bar.datetime.minute
+        if (t_curr + 1) % self.window == 0:
             self.on_window_bar(self.window_bar)
             self.window_bar = None
-            self.interval_count = 0
+

@@ -65,6 +65,25 @@ class LiveCtaEngine:
         )
         return self.main_engine.send_order(req, gateway_name="CTP")
 
+    def cancel_order(self, strategy, vt_orderid: str):
+        """策略撤单委托"""
+        print(f"📡 [实盘引擎] 策略 {strategy.strategy_name} 请求撤单: {vt_orderid}")
+        if self.main_engine.dry_run:
+            print(f"⚠️  [DRY-RUN 撤单拦截] 撤销单号: {vt_orderid}")
+            # 记录交易信号日志
+            log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs'))
+            os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, 'trading_signals.log')
+            with open(log_file, 'a', encoding='utf-8') as f:
+                f.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] DRY-RUN CANCEL - 撤单单号: {vt_orderid}\n")
+            return
+            
+        # 非 dry_run 情况下，调用 CTP gateway 的撤单
+        ctp_gateway = self.main_engine.gateways.get("CTP")
+        if ctp_gateway and hasattr(ctp_gateway, 'cancel_order'):
+            ctp_gateway.cancel_order(vt_orderid)
+
+
     def process_tick(self, event: Event):
         """处理底层 Gateway 派发的 TickData"""
         tick: TickData = event.data

@@ -73,6 +73,12 @@ class CtaTemplate:
             return self.cta_engine.send_order(self, direction, offset, price, volume, stop)
         return ""
         
+    def cancel_order(self, vt_orderid: str):
+        """撤销报单"""
+        if self.trading:
+            self.cta_engine.cancel_order(self, vt_orderid)
+            
     def write_log(self, msg: str):
         """记录日志"""
         self.cta_engine.write_log(f"{self.strategy_name}: {msg}")
+
